@@ -1,4 +1,5 @@
 import torch
+from torch import Dataset, Dataloader
 
 # Define Dataset Class
 class SequenceDataset(torch.utils.data.Dataset):
