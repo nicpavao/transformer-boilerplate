@@ -1,7 +1,9 @@
 import torch
 from torch import nn
 
-def EncoderLayer(nn.Module):
+def EncoderLayer():
+    return 
 
 def EncoderOnlyModel():
-    
+    return
+
