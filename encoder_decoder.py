@@ -1,6 +1,27 @@
 import torch
 import torch.nn as nn
 
+def pos_enc(x):
+    """
+    Applies positional encoding to the input tensor.
+    Args:
+        x: Input tensor of shape (batch_size, seq_length, d_model).
+    Returns:
+        Tensor of the same shape with positional encodings added.
+    """
+    batch_size, seq_length, d_model = x.size()
+    position = torch.arange(0, seq_length, device=x.device).unsqueeze(1)  # Shape: (seq_length, 1)
+    div_term = torch.exp(torch.arange(0, d_model, 2, device=x.device) * -(torch.log(torch.tensor(10000.0)) / d_model))
+    
+    # Compute sinusoidal positional encoding
+    pos_enc_matrix = torch.zeros(seq_length, d_model, device=x.device)
+    pos_enc_matrix[:, 0::2] = torch.sin(position * div_term)
+    pos_enc_matrix[:, 1::2] = torch.cos(position * div_term)
+    
+    # Add batch dimension and apply to input
+    pos_enc_matrix = pos_enc_matrix.unsqueeze(0)  # Shape: (1, seq_length, d_model)
+    return x + pos_enc_matrix
+
     
 class EncoderDecoderModel(nn.Module):
     def __init__(self, input_dim, output_dim, d_model, num_heads, num_layers, ff_dim):
@@ -25,13 +46,15 @@ class EncoderDecoderModel(nn.Module):
         self.fc_out = nn.Linear(d_model, output_dim)
 
     def forward(self, src, tgt):
-        # first encode the input sequence
+        # Apply embeddings and positional encoding for the source
         src_emb = self.encoder_embedding(src)
-        src_encoded = self.encoder(src_emb)
+        src_pos_emb = pos_enc(src_emb)
+        src_encoded = self.encoder(src_pos_emb)
 
-        # build a sequence of decoded output vectors
+        # Apply embeddings and positional encoding for the target
         tgt_emb = self.decoder_embedding(tgt)
-        tgt_decoded = self.decoder(tgt_emb, src_encoded)
+        tgt_pos_emb = pos_enc(tgt_emb)
+        tgt_decoded = self.decoder(tgt_pos_emb, src_encoded)
 
         # return logits for the output vector
         softmax = torch.nn.Softmax(dim=1)
