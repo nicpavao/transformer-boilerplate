@@ -85,3 +85,33 @@ class EncoderDecoderModel(nn.Module):
                 epoch_loss += loss.item()
 
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss / len(dataloader):.4f}")
+
+def predict(self, tgt, max_length, start_token, end_token, device="cpu"):
+    """
+    Generate predictions for a given sequence.
+
+    Args:
+        tgt: Initial target input tensor (batch_size, seq_length).
+        max_length: Maximum length of the predicted sequence.
+        start_token: Token indicating the start of decoding.
+        end_token: Token indicating the end of decoding.
+        device: Device to run prediction on ('cpu' or 'cuda').
+
+    Returns:
+        List of predicted sequences.
+    """
+    self.eval()  # Set model to evaluation mode
+    tgt = tgt.to(device)
+    batch_size = tgt.size(0)
+    predictions = tgt
+
+    for _ in range(max_length):
+        output = self(predictions)
+        next_token = output[:, -1, :].argmax(dim=-1).unsqueeze(-1)  # Get the next token
+        predictions = torch.cat((predictions, next_token), dim=1)
+
+        # Check if all sequences have ended
+        if (next_token == end_token).all():
+            break
+
+    return predictions
