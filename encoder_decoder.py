@@ -115,3 +115,25 @@ def predict(self, tgt, max_length, start_token, end_token, device="cpu"):
             break
 
     return predictions
+
+def save_checkpoint(self, path):
+    """
+    Save the model checkpoint.
+
+    Args:
+        path: File path to save the model.
+    """
+    torch.save(self.state_dict(), path)
+    print(f"Model saved to {path}")
+
+def load_checkpoint(self, path, device="cpu"):
+    """
+    Load the model checkpoint.
+
+    Args:
+        path: File path of the saved model.
+        device: Device to load the model onto ('cpu' or 'cuda').
+    """
+    self.load_state_dict(torch.load(path, map_location=device))
+    self.to(device)
+    print(f"Model loaded from {path}")
