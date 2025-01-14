@@ -78,3 +78,43 @@ class DecoderModel(nn.Module):
                 epoch_loss += loss.item()
 
             print(f"Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss / len(dataloader):.4f}")
+
+def evaluate(self, data, criterion, batch_size, device="cpu"):
+    """
+    Evaluate the model on given data.
+
+    Args:
+        data: A dataset object that returns (tgt, tgt_labels) pairs.
+        criterion: The loss function.
+        batch_size: Batch size for evaluation.
+        device: Device to run evaluation on ('cpu' or 'cuda').
+    
+    Returns:
+        Average loss and accuracy.
+    """
+    self.eval()  # Set model to evaluation mode
+    dataloader = DataLoader(data, batch_size=batch_size, shuffle=False)
+    total_loss = 0
+    correct = 0
+    total = 0
+
+    with torch.no_grad():
+        for tgt, tgt_labels in dataloader:
+            tgt, tgt_labels = tgt.to(device), tgt_labels.to(device)
+            output = self(tgt)
+
+            # Compute loss
+            output_flat = output.view(-1, output.size(-1))
+            tgt_labels_flat = tgt_labels.view(-1)
+            loss = criterion(output_flat, tgt_labels_flat)
+            total_loss += loss.item()
+
+            # Compute accuracy
+            predictions = output.argmax(dim=-1)
+            correct += (predictions == tgt_labels).sum().item()
+            total += tgt_labels.numel()
+
+    avg_loss = total_loss / len(dataloader)
+    accuracy = correct / total if total > 0 else 0
+    print(f"Validation Loss: {avg_loss:.4f}, Accuracy: {accuracy:.4f}")
+    return avg_loss, accuracy
