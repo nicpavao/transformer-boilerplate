@@ -33,5 +33,48 @@ class DecoderModel(nn.Module):
 
         return self.fc_out(tgt_decoded)
     
-    def train(self, data, criterion, optim, lr):
-        pass
+    def train_model(self, data, criterion, lr, epochs, batch_size, device="cpu"):
+        """
+        Train the model with given data.
+
+        Args:
+            data: A dataset object that returns (tgt, tgt_labels) pairs.
+            criterion: The loss function.
+            lr: Learning rate.
+            epochs: Number of training epochs.
+            batch_size: Batch size for training.
+            device: Device to train on ('cpu' or 'cuda').
+        """
+        # Optimizer
+        optimizer = Adam(self.parameters(), lr=lr)
+
+        # DataLoader for batching
+        dataloader = DataLoader(data, batch_size=batch_size, shuffle=True)
+
+        # Move model to the specified device
+        self.to(device)
+
+        for epoch in range(epochs):
+            self.train()  # Set model to training mode
+            epoch_loss = 0
+
+            for tgt, tgt_labels in dataloader:
+                # Move data to the specified device
+                tgt, tgt_labels = tgt.to(device), tgt_labels.to(device)
+
+                # Forward pass
+                output = self(tgt)
+
+                # Compute loss
+                output_flat = output.view(-1, output.size(-1))  # Flatten for criterion
+                tgt_labels_flat = tgt_labels.view(-1)  # Flatten target labels
+                loss = criterion(output_flat, tgt_labels_flat)
+
+                # Backpropagation
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                epoch_loss += loss.item()
+
+            print(f"Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss / len(dataloader):.4f}")
