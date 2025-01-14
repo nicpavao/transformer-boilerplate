@@ -27,5 +27,46 @@ class EncoderModel(nn.Module):
 
         return self.fc_out_seq(tgt_compressed.transpose(0,1))
     
-    def train(self, data, criterion, optim, lr):
-        pass
+    def train_model(self, data, criterion, lr, epochs, batch_size, device='cpu'):
+        """
+        Train the model with given data.
+        
+        Args:
+            data: A dataset object that returns (src, tgt) pairs.
+            criterion: The loss function.
+            lr: Learning rate.
+            epochs: Number of training epochs.
+            batch_size: Batch size for training.
+            device: Device to train on ('cpu' or 'cuda').
+        """
+        # Optimizer
+        optimizer = Adam(self.parameters(), lr=lr)
+
+        # DataLoader for batching
+        dataloader = DataLoader(data, batch_size=batch_size, shuffle=True)
+
+        # Move model to the specified device
+        self.to(device)
+
+        for epoch in range(epochs):
+            self.train()  # Set model to training mode
+            epoch_loss = 0
+
+            for src, tgt in dataloader:
+                # Move data to the specified device
+                src, tgt = src.to(device), tgt.to(device)
+
+                # Forward pass
+                output = self(src)
+
+                # Compute loss
+                loss = criterion(output.squeeze(-1), tgt.float())
+
+                # Backpropagation
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                epoch_loss += loss.item()
+
+            print(f"Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss / len(dataloader):.4f}")
